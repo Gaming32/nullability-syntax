@@ -5,8 +5,6 @@ import com.sun.source.util.Plugin;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.api.BasicJavacTask;
-import com.sun.tools.javac.jvm.Gen;
-import com.sun.tools.javac.parser.JavaTokenizer;
 import com.sun.tools.javac.parser.Tokens;
 import com.sun.tools.javac.util.JavacMessages;
 import com.sun.tools.javac.util.Names;
@@ -17,10 +15,6 @@ import net.lenni0451.reflect.Agents;
 import net.lenni0451.reflect.Modules;
 import net.lenni0451.reflect.stream.RStream;
 
-import java.io.IOException;
-import java.lang.instrument.Instrumentation;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Map;
 
 public class NullabilitySyntaxPlugin implements Plugin {
@@ -60,30 +54,19 @@ public class NullabilitySyntaxPlugin implements Plugin {
 
     private static void setup() throws Exception {
         Modules.openEntireModule(JavacTask.class);
-        final Class<?>[] retransform = {Gen.class, JavaTokenizer.class};
         final String pkg = NullabilitySyntaxPlugin.class.getPackageName();
         final TransformerManager transformerManager = new TransformerManager(new BasicClassProvider());
 
         transformerManager.addTransformerPreprocessor(new MixinsTranslator());
         if (debug) {
-            transformerManager.addPostTransformConsumer((className, bytecode) -> {
-                final Path dumpPath = Path.of("dump", className.replace('.', '/') + ".class");
-                try {
-                    Files.createDirectories(dumpPath.getParent());
-                    Files.write(dumpPath, bytecode);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
+            transformerManager.getDebugger().setDumpClasses(true);
         }
         transformerManager.addTransformer(pkg + ".transform.GenTransformer");
         transformerManager.addTransformer(pkg + ".transform.JavacParserTransformer");
         transformerManager.addTransformer(pkg + ".transform.JavaTokenizerTransformer");
         transformerManager.addTransformer(pkg + ".transform.PrettyTransformer");
 
-        final Instrumentation instrumentation = Agents.getInstrumentation();
-        instrumentation.addTransformer(transformerManager, true);
-        instrumentation.retransformClasses(retransform);
+        transformerManager.hookInstrumentation(Agents.getInstrumentation());
 
         CustomTokens.init();
     }
