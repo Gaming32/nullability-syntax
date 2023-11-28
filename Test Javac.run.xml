@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Test Javac" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="com.sun.tools.javac.Main" />
+    <module name="nullability-syntax.main" />
+    <option name="PROGRAM_PARAMETERS" value="-Xplugin:&quot;nullability debug&quot; Test.java" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
